@@ -9,6 +9,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+
 	_ "github.com/lib/pq"
 )
 
@@ -44,6 +48,11 @@ func main() {
 		logger.Fatal(err)
 	}
 	defer db.Close()
+
+	err = RunMigrationsWithDB(db, "./database/migrations")
+	if err != nil {
+		panic(err)
+	}
 
 	db.SetMaxOpenConns(10)
 	db.SetConnMaxLifetime(time.Minute * 5)
@@ -165,7 +174,7 @@ func (app *App) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "User updated successfully")
+	fmt.Fprintf(w, "subscription updated successfully")
 
 }
 
@@ -204,10 +213,34 @@ func (app *App) sumCost(w http.ResponseWriter, r *http.Request) {
 }
 
 func getEnv(key, defaultValue string) string {
-	fmt.Println(key, defaultValue)
 	if value, exists := os.LookupEnv(key); exists {
-		fmt.Println(value)
 		return value
 	}
 	return defaultValue
+}
+
+func RunMigrationsWithDB(db *sql.DB, migrationsPath string) error {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		return err
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://"+migrationsPath,
+		"postgres",
+		driver,
+	)
+
+	err = m.Up()
+	//fmt.Println(err)
+
+	switch {
+	case err == nil:
+		log.Println("Новые миграции успешно применены")
+		return nil
+	case err == migrate.ErrNoChange:
+		log.Println("Все миграции уже применены — изменений нет")
+		return nil // Не ошибка — возвращаем nil
+	}
+	return nil
 }

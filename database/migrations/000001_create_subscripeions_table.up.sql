@@ -1,0 +1,7 @@
+CREATE TABLE subscriptions (
+id SERIAL PRIMARY KEY,
+service VARCHAR(200) NOT NULL,
+cost INTEGER DEFAULT 0,
+user_id UUID NOT NULL,
+start_date DATE DEFAULT CURRENT_DATE
+);
