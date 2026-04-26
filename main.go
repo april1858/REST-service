@@ -174,7 +174,7 @@ func (app *App) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "subscription updated successfully")
+	fmt.Fprintf(w, "subscriptions updated\n")
 
 }
 
