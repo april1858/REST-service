@@ -12,6 +12,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq"
 )
@@ -36,14 +37,18 @@ type Subscription struct {
 }
 
 func main() {
-	logger := log.New(os.Stdout, "[API] ", log.LstdFlags)
 
-	cfg := Config{
-		DBConnString: getEnv("DATABASE_URL", "host=localhost port=5432 user=postgres password=x dbname=test sslmode=disable"),
-		ServerPort:   getEnv("SERVER_PORT", "8080"),
+	err := godotenv.Load("config.env")
+	if err != nil {
+		log.Fatal("Ошибка загрузки .env файла")
 	}
 
-	db, err := sql.Open("postgres", cfg.DBConnString)
+	cnf := LoadConfig()
+
+	logger := log.New(os.Stdout, "[API] ", log.LstdFlags)
+
+	db, err := sql.Open("postgres", cnf.DBConnString)
+	fmt.Println(db)
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -65,7 +70,7 @@ func main() {
 	app := &App{
 		DB:     db,
 		Logger: logger,
-		Config: cfg,
+		Config: *cnf,
 	}
 
 	mux := http.NewServeMux()
@@ -211,12 +216,11 @@ func (app *App) sumCost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(sum)
 }
-
-func getEnv(key, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+func LoadConfig() *Config {
+	return &Config{
+		DBConnString: fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("USER"), os.Getenv("PASSWORD"), os.Getenv("DB_NAME"), os.Getenv("SSLMODE")),
+		ServerPort:   os.Getenv("SERVER_PORT"),
 	}
-	return defaultValue
 }
 
 func RunMigrationsWithDB(db *sql.DB, migrationsPath string) error {
