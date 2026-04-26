@@ -232,15 +232,15 @@ func RunMigrationsWithDB(db *sql.DB, migrationsPath string) error {
 	)
 
 	err = m.Up()
-	//fmt.Println(err)
 
-	switch {
-	case err == nil:
+	switch err {
+	case nil:
 		log.Println("Новые миграции успешно применены")
 		return nil
-	case err == migrate.ErrNoChange:
+	case migrate.ErrNoChange:
 		log.Println("Все миграции уже применены — изменений нет")
 		return nil // Не ошибка — возвращаем nil
+	default:
+		return err
 	}
-	return nil
 }

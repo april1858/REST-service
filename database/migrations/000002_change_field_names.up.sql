@@ -1,2 +1,2 @@
-ALTER TABLE test RENAME COLUMN service TO service_name;
-ALTER TABLE test RENAME COLUMN cost TO price;
+ALTER TABLE subscriptions RENAME COLUMN service TO service_name;
+ALTER TABLE subscriptions RENAME COLUMN cost TO price;
